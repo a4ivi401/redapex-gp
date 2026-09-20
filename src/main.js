@@ -1,60 +1,87 @@
-import './style.css'
-import heroImg from './assets/hero.png'
-import javascriptLogo from './assets/javascript.svg'
-import viteLogo from './assets/vite.svg'
-import { setupCounter } from './counter.js'
+import "./style.css";
+import { createCanvas } from "./render/canvas.js";
+import { createInput } from "./input.js";
+import { createLoop } from "./loop.js";
+import { createCar, integrate } from "./sim/car.js";
+import { wrapArena, lerpPosition, lerpAngle } from "./sim/arena.js";
+import { drawCar, drawGrid, drawHud } from "./render/draw.js";
 
-document.querySelector('#app').innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${javascriptLogo}" class="framework" alt="JavaScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.js</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+// Composition Root / Головний модуль ініціалізації та зв'язування компонентів
+const view = createCanvas("#game");
+const { ctx } = view;
+const input = createInput(window);
 
-<div class="ticks"></div>
+// Dual-state storage for sub-frame linear interpolation (LERP).
+// Подвійний стан для субкадрової лінійної інтерполяції.
+let currentCar = createCar(view.width / 2, view.height / 2);
+let previousCar = { ...currentCar };
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-          <img class="button-icon" src="${javascriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+/**
+ * Advances physics by one fixed step (1/60s).
+ * Просування фізичної симуляції на один фіксований крок.
+ */
+function simulate(step) {
+  previousCar = { ...currentCar };
+  integrate(currentCar, input, step);
+  wrapArena(currentCar, view.width, view.height);
+}
 
-<div class="ticks"></div>
-<section id="spacer"></section>
-`
+/**
+ * Renders interpolated frame state based on residual alpha ratio.
+ * Рендеринг кадру з лінійною інтерполяцією стану за коефіцієнтом alpha.
+ */
+function render(alpha, stats) {
+  // 1. Clear viewport & draw track grid / Очищення та малювання сітки
+  ctx.fillStyle = "#080c14";
+  ctx.fillRect(0, 0, view.width, view.height);
+  drawGrid(ctx, view.width, view.height);
 
-setupCounter(document.querySelector('#counter'))
+  // 2. State interpolation (LERP) / Інтерполяція стану
+  const renderX = lerpPosition(
+    previousCar.x,
+    currentCar.x,
+    alpha,
+    view.width
+  );
+  const renderY = lerpPosition(
+    previousCar.y,
+    currentCar.y,
+    alpha,
+    view.height
+  );
+  const renderAngle = lerpAngle(previousCar.angle, currentCar.angle, alpha);
+  const renderThrust = currentCar.thrust;
+
+  // 3. Draw model & telemetry / Відображення моделі та телеметрії
+  drawCar(ctx, renderX, renderY, renderAngle, renderThrust);
+  drawHud(ctx, stats, alpha, currentCar, input);
+}
+
+const loop = createLoop({ simulate, render });
+loop.start();
+
+// Keyboard Shortcuts / Гарячі клавіші: H (HUD Toggle), R (Reset Object)
+window.addEventListener("keydown", (e) => {
+  if (e.code === "KeyH") {
+    const hud = document.getElementById("hud");
+    if (hud) hud.classList.toggle("hud-hidden");
+  } else if (e.code === "KeyR") {
+    currentCar = createCar(view.width / 2, view.height / 2);
+    previousCar = { ...currentCar };
+  }
+});
+
+// Global bridge for DevTools inspection & lab experiments.
+// Глобальні об'єкти для тестування в DevTools та експериментів.
+window.loop = loop;
+window.game = {
+  view,
+  input,
+  get car() {
+    return currentCar;
+  },
+  resetCar() {
+    currentCar = createCar(view.width / 2, view.height / 2);
+    previousCar = { ...currentCar };
+  },
+};
