@@ -1,13 +1,110 @@
 <!doctype html>
-<html lang="en">
+<html lang="uk">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>minecave</title>
+    <title>RedApex GP — 2D Vehicle Simulator</title>
   </head>
   <body>
-    <div id="app"></div>
+    <canvas id="game"></canvas>
+
+    <!-- Telemetry HUD Overlay -->
+    <aside id="hud" class="hud-panel" aria-label="Панель телеметрії RedApex GP">
+      <header class="hud-header">
+        <div class="hud-brand">
+          <div class="hud-racing-stripe" aria-hidden="true"></div>
+          <div>
+            <div class="hud-title">REDAPEX <span class="hud-accent">GP</span></div>
+            <div class="hud-subtitle">TELEMETRY // LAB 01</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- 2x2 Telemetry Metric Grid -->
+      <div class="hud-grid">
+        <div class="hud-card">
+          <span class="hud-card-label">SIM RATE</span>
+          <div class="hud-card-value-wrap">
+            <span id="stat-sim-rate" class="hud-card-value">60.0</span>
+            <span class="hud-card-unit">step/s</span>
+          </div>
+          <span class="hud-card-subtext">Accumulator</span>
+        </div>
+
+        <div class="hud-card">
+          <span class="hud-card-label">RENDER FPS</span>
+          <div class="hud-card-value-wrap">
+            <span id="stat-fps" class="hud-card-value">60.0</span>
+            <span class="hud-card-unit">fps</span>
+          </div>
+          <span class="hud-card-subtext">requestAnimFrame</span>
+        </div>
+
+        <div class="hud-card">
+          <span class="hud-card-label">FRAME TIME</span>
+          <div class="hud-card-value-wrap">
+            <span id="stat-frametime" class="hud-card-value">16.67</span>
+            <span class="hud-card-unit">ms</span>
+          </div>
+          <span class="hud-card-subtext">Delta time (dt)</span>
+        </div>
+
+        <div class="hud-card">
+          <span class="hud-card-label">SPEED</span>
+          <div class="hud-card-value-wrap">
+            <span id="stat-speed" class="hud-card-value">0</span>
+            <span class="hud-card-unit">km/h</span>
+          </div>
+          <span class="hud-card-subtext">Velocity |v|</span>
+        </div>
+      </div>
+
+      <!-- Interpolation Sub-frame Gauge (LERP Alpha) -->
+      <section class="hud-gauge-section">
+        <div class="hud-gauge-header">
+          <span class="hud-gauge-title">SUB-FRAME LERP (α)</span>
+          <span id="stat-alpha" class="hud-gauge-value">0.000</span>
+        </div>
+        <div class="hud-gauge-track" aria-hidden="true">
+          <div id="hud-alpha-fill" class="hud-gauge-fill"></div>
+        </div>
+        <div class="hud-gauge-ticks" aria-hidden="true">
+          <span>0.0</span>
+          <span>0.25</span>
+          <span>0.50</span>
+          <span>0.75</span>
+          <span>1.0</span>
+        </div>
+      </section>
+
+      <!-- Live Input Telemetry & Controls -->
+      <footer class="hud-footer">
+        <div class="hud-inputs-row">
+          <div id="input-indicator-throttle" class="hud-input-tag">
+            <span class="hud-tag-dot"></span>
+            <span>THROTTLE</span>
+            <span class="hud-tag-keys"><kbd>W</kbd><kbd>▲</kbd></span>
+          </div>
+          <div id="input-indicator-steer-left" class="hud-input-tag">
+            <span class="hud-tag-dot"></span>
+            <span>LEFT</span>
+            <span class="hud-tag-keys"><kbd>A</kbd><kbd>◄</kbd></span>
+          </div>
+          <div id="input-indicator-steer-right" class="hud-input-tag">
+            <span class="hud-tag-dot"></span>
+            <span>RIGHT</span>
+            <span class="hud-tag-keys"><kbd>D</kbd><kbd>►</kbd></span>
+          </div>
+        </div>
+
+        <div class="hud-shortcuts-row">
+          <span class="hud-shortcut-item"><kbd>H</kbd> HUD Toggle</span>
+          <span class="hud-shortcut-item"><kbd>R</kbd> Reset Vehicle</span>
+        </div>
+      </footer>
+    </aside>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
